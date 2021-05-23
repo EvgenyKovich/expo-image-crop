@@ -289,10 +289,6 @@ class ExpoImageManipulator extends Component {
     }
     
     renderImage(uri, width, imageRatio, originalHeight) {
-        const { componentLoaded } = this.state
-        if (!componentLoaded) {
-            return
-        }
         return (<AutoHeightImage
             style={{backgroundColor: 'black'}}
             source={{uri}}
