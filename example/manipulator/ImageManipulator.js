@@ -35,6 +35,7 @@ class ExpoImageManipulator extends Component {
             cropMode: false,
             processing: false,
             zoomScale: 1,
+            componentLoaded: false,
         }
 
         this.scrollOffset = 0
@@ -286,6 +287,20 @@ class ExpoImageManipulator extends Component {
 
         // this.setState(curHeight)
     }
+    
+    renderImage(uri, width, imageRatio, originalHeight) {
+        const { componentLoaded } = this.state
+        if (!componentLoaded) {
+            return
+        }
+        return (<AutoHeightImage
+            style={{backgroundColor: 'black'}}
+            source={{uri}}
+            resizeMode={imageRatio >= 1 ? 'contain' : 'contain'}
+            width={width}
+            height={originalHeight}
+        />)
+    }
 
     render() {
         const {
@@ -454,14 +469,7 @@ class ExpoImageManipulator extends Component {
                         // scrollEnabled={cropMode ? false : true}
                         // pinchGestureEnabled={cropMode ? false : pinchGestureEnabled}
                     >
-                        <AutoHeightImage
-                            style={{ backgroundColor: 'black' }}
-                            source={{ uri }}
-                            resizeMode={imageRatio >= 1 ? 'contain' : 'contain'}
-                            width={width}
-                            height={originalHeight}
-                            // onLayout={this.calculateMaxSizes}
-                        />
+                        {this.renderImage(uri, width, imageRatio, originalHeight)}
                         {!!cropMode && (
                             <ImageCropOverlay
                                 onLayoutChanged={(top, left, w, height) => {
