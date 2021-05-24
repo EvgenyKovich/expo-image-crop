@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, {Component} from 'react'
 import {
     Dimensions,
     Image,
@@ -16,10 +16,10 @@ import PropTypes from 'prop-types'
 import AutoHeightImage from 'react-native-auto-height-image'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons'
-import { isIphoneX } from 'react-native-iphone-x-helper'
+import {isIphoneX} from 'react-native-iphone-x-helper'
 import ImageCropOverlay from './ImageCropOverlay'
 
-const { width } = Dimensions.get('window')
+const {width} = Dimensions.get('window')
 
 YellowBox.ignoreWarnings(['componentWillReceiveProps', 'componentWillUpdate', 'componentWillMount'])
 YellowBox.ignoreWarnings([
@@ -35,7 +35,7 @@ class ExpoImageManipulator extends Component {
             cropMode: false,
             processing: false,
             zoomScale: 1,
-            componentLoaded: false,
+            ratio: 1,
         }
 
         this.scrollOffset = 0
@@ -62,7 +62,9 @@ class ExpoImageManipulator extends Component {
     }
 
     async componentDidMount() {
-        await this.onConvertImageToEditableSize()
+        setTimeout(async () => {
+            await this.onConvertImageToEditableSize()
+        }, 0)
     }
 
     onGetCorrectSizes = (w, h) => {
@@ -73,14 +75,15 @@ class ExpoImageManipulator extends Component {
         const ratio = Math.min(1920 / w, 1080 / h)
         sizes.convertedWidth = Math.round(w * ratio)
         sizes.convertedheight = Math.round(h * ratio)
+        sizes.ratio = ratio
         return sizes
     }
 
     async onConvertImageToEditableSize() {
-        const { photo: { uri: rawUri } } = this.props
+        const {photo: {uri: rawUri}} = this.props
         Image.getSize(rawUri, async (imgW, imgH) => {
-            const { convertedWidth, convertedheight } = this.onGetCorrectSizes(imgW, imgH)
-            const { uri, width: w, height } = await ImageManipulator.manipulateAsync(rawUri,
+            const {convertedWidth, convertedheight, ratio} = this.onGetCorrectSizes(imgW, imgH)
+            const {uri, width: w, height} = await ImageManipulator.manipulateAsync(rawUri,
                 [
                     {
                         resize: {
@@ -91,6 +94,7 @@ class ExpoImageManipulator extends Component {
                 ])
             this.setState({
                 uri,
+                ratio
             })
             this.actualSize.width = w
             this.actualSize.height = height
@@ -98,19 +102,19 @@ class ExpoImageManipulator extends Component {
     }
 
     get isRemote() {
-        const { uri } = this.state
+        const {uri} = this.state
         return /^(http|https|ftp)?(?:[:/]*)([a-z0-9.-]*)(?::([0-9]+))?(\/[^?#]*)?(?:\?([^#]*))?(?:#(.*))?$/.test(uri)
     }
 
     onToggleModal = () => {
-        const { onToggleModal } = this.props
+        const {onToggleModal} = this.props
         onToggleModal()
-        this.setState({ cropMode: false })
+        this.setState({cropMode: false})
     }
 
     onCropImage = () => {
-        this.setState({ processing: true })
-        const { uri } = this.state
+        this.setState({processing: true})
+        const {uri} = this.state
         Image.getSize(uri, async (actualWidth, actualHeight) => {
             const cropObj = this.getCropBounds(actualWidth, actualHeight)
             if (cropObj.height > 0 && cropObj.width > 0) {
@@ -133,13 +137,13 @@ class ExpoImageManipulator extends Component {
                     uri: uriCroped, base64, cropMode: false, processing: false,
                 })
             } else {
-                this.setState({ cropMode: false, processing: false })
+                this.setState({cropMode: false, processing: false})
             }
         })
     }
 
     onRotateImage = async () => {
-        const { uri } = this.state
+        const {uri} = this.state
         let uriToCrop = uri
         if (this.isRemote) {
             const response = await FileSystem.downloadAsync(
@@ -149,13 +153,13 @@ class ExpoImageManipulator extends Component {
             uriToCrop = response.uri
         }
         Image.getSize(uri, async (width2, height2) => {
-            const { uri: rotUri, base64 } = await this.rotate(uriToCrop, width2, height2)
-            this.setState({ uri: rotUri, base64 })
+            const {uri: rotUri, base64} = await this.rotate(uriToCrop, width2, height2)
+            this.setState({uri: rotUri, base64})
         })
     }
 
     onFlipImage = async (orientation) => {
-        const { uri } = this.state
+        const {uri} = this.state
         let uriToCrop = uri
         if (this.isRemote) {
             const response = await FileSystem.downloadAsync(
@@ -165,8 +169,8 @@ class ExpoImageManipulator extends Component {
             uriToCrop = response.uri
         }
         Image.getSize(uri, async () => {
-            const { uri: rotUri, base64 } = await this.filp(uriToCrop, orientation)
-            this.setState({ uri: rotUri, base64 })
+            const {uri: rotUri, base64} = await this.filp(uriToCrop, orientation)
+            this.setState({uri: rotUri, base64})
         })
     }
 
@@ -224,16 +228,16 @@ class ExpoImageManipulator extends Component {
     }
 
     filp = async (uri, orientation) => {
-        const { saveOptions } = this.props
+        const {saveOptions} = this.props
         const manipResult = await ImageManipulator.manipulateAsync(uri, [{
-            flip: orientation === 'vertical' ? ImageManipulator.FlipType.Vertical : ImageManipulator.FlipType.Horizontal,
-        }],
-        saveOptions)
+                flip: orientation === 'vertical' ? ImageManipulator.FlipType.Vertical : ImageManipulator.FlipType.Horizontal,
+            }],
+            saveOptions)
         return manipResult
     };
 
     rotate = async (uri, width2) => {
-        const { saveOptions } = this.props
+        const {saveOptions} = this.props
         const manipResult = await ImageManipulator.manipulateAsync(uri, [{
             rotate: -90,
         }, {
@@ -246,7 +250,7 @@ class ExpoImageManipulator extends Component {
     }
 
     crop = async (cropObj, uri) => {
-        const { saveOptions } = this.props
+        const {saveOptions} = this.props
         if (cropObj.height > 0 && cropObj.width > 0) {
             const manipResult = await ImageManipulator.manipulateAsync(
                 uri,
@@ -287,16 +291,6 @@ class ExpoImageManipulator extends Component {
 
         // this.setState(curHeight)
     }
-    
-    renderImage(uri, width, imageRatio, originalHeight) {
-        return (<AutoHeightImage
-            style={{backgroundColor: 'black'}}
-            source={{uri}}
-            resizeMode={imageRatio >= 1 ? 'contain' : 'contain'}
-            width={width}
-            height={originalHeight}
-        />)
-    }
 
     render() {
         const {
@@ -307,13 +301,13 @@ class ExpoImageManipulator extends Component {
             allowFlip = true,
             btnTexts,
             fixedMask,
-            ratio,
         } = this.props
         const {
             uri,
             base64,
             cropMode,
             processing,
+            ratio,
         } = this.state
 
         const imageRatio = this.actualSize.height / this.actualSize.width
@@ -354,47 +348,63 @@ class ExpoImageManipulator extends Component {
                     }}
                 >
                     <ScrollView scrollEnabled={false}
-                        horizontal
-                        contentContainerStyle={{
-                            width: '100%', paddingHorizontal: 15, height: 44, alignItems: 'center',
-                        }}
+                                horizontal
+                                contentContainerStyle={{
+                                    width: '100%', paddingHorizontal: 15, height: 44, alignItems: 'center',
+                                }}
                     >
                         {!cropMode
                             ? (
-                                <View style={{ flexDirection: 'row' }}>
+                                <View style={{flexDirection: 'row'}}>
                                     <TouchableOpacity onPress={() => this.onToggleModal()}
-                                        style={{
-                                            width: 32, height: 32, alignItems: 'center', justifyContent: 'center',
-                                        }}
+                                                      style={{
+                                                          width: 32,
+                                                          height: 32,
+                                                          alignItems: 'center',
+                                                          justifyContent: 'center',
+                                                      }}
                                     >
-                                        <Icon size={24} name="arrow-left" color="white" />
+                                        <Icon size={24} name="arrow-left" color="white"/>
                                     </TouchableOpacity>
-                                    <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-end' }}>
-                                        <TouchableOpacity onPress={() => this.setState({ cropMode: true })}
-                                            style={{
-                                                marginLeft: 10, width: 32, height: 32, alignItems: 'center', justifyContent: 'center',
-                                            }}
+                                    <View style={{flex: 1, flexDirection: 'row', justifyContent: 'flex-end'}}>
+                                        <TouchableOpacity onPress={() => this.setState({cropMode: true})}
+                                                          style={{
+                                                              marginLeft: 10,
+                                                              width: 32,
+                                                              height: 32,
+                                                              alignItems: 'center',
+                                                              justifyContent: 'center',
+                                                          }}
                                         >
-                                            <Icon size={20} name="crop" color="white" />
+                                            <Icon size={20} name="crop" color="white"/>
                                         </TouchableOpacity>
                                         {
                                             allowRotate
                                             && (
-                                                <View style={{ flexDirection: 'row' }}>
+                                                <View style={{flexDirection: 'row'}}>
 
                                                     <TouchableOpacity onPress={() => this.onRotateImage()}
-                                                        style={{
-                                                            marginLeft: 10, width: 32, height: 32, alignItems: 'center', justifyContent: 'center',
-                                                        }}
+                                                                      style={{
+                                                                          marginLeft: 10,
+                                                                          width: 32,
+                                                                          height: 32,
+                                                                          alignItems: 'center',
+                                                                          justifyContent: 'center',
+                                                                      }}
                                                     >
-                                                        <Icon size={20} name="rotate-left" color="white" />
+                                                        <Icon size={20} name="rotate-left" color="white"/>
                                                     </TouchableOpacity>
                                                     <TouchableOpacity onPress={() => this.onFlipImage('vertical')}
-                                                        style={{
-                                                            marginLeft: 10, width: 32, height: 32, alignItems: 'center', justifyContent: 'center',
-                                                        }}
+                                                                      style={{
+                                                                          marginLeft: 10,
+                                                                          width: 32,
+                                                                          height: 32,
+                                                                          alignItems: 'center',
+                                                                          justifyContent: 'center',
+                                                                      }}
                                                     >
-                                                        <MaterialIcon style={{ transform: [{ rotate: '270deg' }] }} size={20} name="flip" color="white" />
+                                                        <MaterialIcon style={{transform: [{rotate: '270deg'}]}}
+                                                                      size={20} name="flip" color="white"/>
                                                     </TouchableOpacity>
                                                 </View>
                                             )
@@ -402,21 +412,36 @@ class ExpoImageManipulator extends Component {
                                         {
                                             allowFlip
                                             && (
-                                                <View style={{ flexDirection: 'row' }}>
+                                                <View style={{flexDirection: 'row'}}>
 
                                                     <TouchableOpacity onPress={() => this.onFlipImage('horizontal')}
-                                                        style={{
-                                                            marginLeft: 10, width: 32, height: 32, alignItems: 'center', justifyContent: 'center',
-                                                        }}
+                                                                      style={{
+                                                                          marginLeft: 10,
+                                                                          width: 32,
+                                                                          height: 32,
+                                                                          alignItems: 'center',
+                                                                          justifyContent: 'center',
+                                                                      }}
                                                     >
-                                                        <MaterialIcon size={20} name="flip" color="white" />
+                                                        <MaterialIcon size={20} name="flip" color="white"/>
                                                     </TouchableOpacity>
-                                                    <TouchableOpacity onPress={() => { onPictureChoosed({ uri, base64 }); this.onToggleModal() }}
-                                                        style={{
-                                                            marginLeft: 10, width: 60, height: 32, alignItems: 'center', justifyContent: 'center',
-                                                        }}
+                                                    <TouchableOpacity onPress={() => {
+                                                        onPictureChoosed({uri, base64});
+                                                        this.onToggleModal()
+                                                    }}
+                                                                      style={{
+                                                                          marginLeft: 10,
+                                                                          width: 60,
+                                                                          height: 32,
+                                                                          alignItems: 'center',
+                                                                          justifyContent: 'center',
+                                                                      }}
                                                     >
-                                                        <Text style={{ fontWeight: '500', color: 'white', fontSize: 18 }}>{btnTexts.done}</Text>
+                                                        <Text style={{
+                                                            fontWeight: '500',
+                                                            color: 'white',
+                                                            fontSize: 18
+                                                        }}>{btnTexts.done}</Text>
                                                     </TouchableOpacity>
                                                 </View>
                                             )
@@ -425,22 +450,30 @@ class ExpoImageManipulator extends Component {
                                 </View>
                             )
                             : (
-                                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                    <TouchableOpacity onPress={() => this.setState({ cropMode: false })}
-                                        style={{
-                                            width: 32, height: 32, alignItems: 'center', justifyContent: 'center',
-                                        }}
+                                <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+                                    <TouchableOpacity onPress={() => this.setState({cropMode: false})}
+                                                      style={{
+                                                          width: 32,
+                                                          height: 32,
+                                                          alignItems: 'center',
+                                                          justifyContent: 'center',
+                                                      }}
                                     >
-                                        <Icon size={24} name="arrow-left" color="white" />
+                                        <Icon size={24} name="arrow-left" color="white"/>
                                     </TouchableOpacity>
                                     <TouchableOpacity onPress={() => this.onCropImage()}
-                                        style={{
-                                            marginRight: 10, alignItems: 'flex-end', flex: 1,
-                                        }}
+                                                      style={{
+                                                          marginRight: 10, alignItems: 'flex-end', flex: 1,
+                                                      }}
                                     >
-                                        <View style={{ flexDirection: 'row' }}>
-                                            <MaterialIcon style={{ flexDirection: 'row', marginRight: 10 }} size={24} name={!processing ? 'done' : 'access-time'} color="white" />
-                                            <Text style={{ fontWeight: '500', color: 'white', fontSize: 18 }}>{!processing ? btnTexts.crop : btnTexts.processing}</Text>
+                                        <View style={{flexDirection: 'row'}}>
+                                            <MaterialIcon style={{flexDirection: 'row', marginRight: 10}} size={24}
+                                                          name={!processing ? 'done' : 'access-time'} color="white"/>
+                                            <Text style={{
+                                                fontWeight: '500',
+                                                color: 'white',
+                                                fontSize: 18
+                                            }}>{!processing ? btnTexts.crop : btnTexts.processing}</Text>
                                         </View>
                                     </TouchableOpacity>
                                 </View>
@@ -448,44 +481,40 @@ class ExpoImageManipulator extends Component {
                         }
                     </ScrollView>
                 </SafeAreaView>
-                <View style={{ flex: 1, backgroundColor: 'black', width: Dimensions.get('window').width }}>
-                    <ScrollView
-                        style={{ position: 'relative', flex: 1 }}
-                        contentContainerStyle={{ backgroundColor: 'black' }}
-                        maximumZoomScale={5}
-                        minimumZoomScale={0.5}
-                        onScroll={this.onHandleScroll}
-                        bounces={false}
-                        showsHorizontalScrollIndicator={false}
-                        showsVerticalScrollIndicator={false}
-                        ref={(c) => { this.scrollView = c }}
-                        scrollEventThrottle={16}
-                        scrollEnabled={false}
-                        pinchGestureEnabled={false}
-                        // scrollEnabled={cropMode ? false : true}
-                        // pinchGestureEnabled={cropMode ? false : pinchGestureEnabled}
-                    >
-                        {this.renderImage(uri, width, imageRatio, originalHeight)}
-                        {!!cropMode && (
-                            <ImageCropOverlay
-                                onLayoutChanged={(top, left, w, height) => {
-                                    this.currentSize.width = w
-                                    this.currentSize.height = height
-                                    this.currentPos.top = top
-                                    this.currentPos.left = left
-                                }}
-                                initialWidth={(fixedMask && fixedMask.width) || cropWidth}
-                                initialHeight={(fixedMask && fixedMask.height) || cropHeight}
-                                initialTop={cropInitialTop}
-                                initialLeft={cropInitialLeft}
-                                minHeight={(fixedMask && fixedMask.height) || 100}
-                                minWidth={(fixedMask && fixedMask.width) || 100}
-                                borderColor={borderColor}
-                                ratio={ratio || {ratio: {height: null, width: null, }}}
-                            />
-                        )
-                        }
-                    </ScrollView>
+                <View style={{backgroundColor: 'black', flex: 1}}>
+
+                    <AutoHeightImage
+                        style={{
+                            backgroundColor: 'black',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            alignSelf: 'center',
+                            marginTop: ratio >= 1.44 ? 213 : 0
+                        }}
+                        source={{uri}}
+                        resizeMode={imageRatio >= 1 ? 'contain' : 'contain'}
+                        width={width}
+                        height={originalHeight}
+                        // onLayout={this.calculateMaxSizes}
+                    />
+                    {!!cropMode && (
+                        <ImageCropOverlay
+                            onLayoutChanged={(top, left, w, height) => {
+                                this.currentSize.width = w
+                                this.currentSize.height = height
+                                this.currentPos.top = top
+                                this.currentPos.left = left
+                            }}
+                            initialWidth={(fixedMask && fixedMask.width) || cropWidth}
+                            initialHeight={(fixedMask && fixedMask.height) || cropHeight}
+                            initialTop={cropInitialTop}
+                            initialLeft={cropInitialLeft}
+                            minHeight={(fixedMask && fixedMask.height) || 100}
+                            minWidth={(fixedMask && fixedMask.width) || 100}
+                            borderColor={borderColor}
+                        />
+                    )
+                    }
                 </View>
             </Modal>
         )
@@ -495,7 +524,7 @@ class ExpoImageManipulator extends Component {
 export default ExpoImageManipulator
 
 ExpoImageManipulator.defaultProps = {
-    onPictureChoosed: ({ uri, base64 }) => console.log('URI:', uri, base64),
+    onPictureChoosed: ({uri, base64}) => console.log('URI:', uri, base64),
     borderColor: '#a4a4a4',
     btnTexts: {
         crop: 'Crop',
@@ -520,5 +549,4 @@ ExpoImageManipulator.propTypes = {
     saveOptions: PropTypes.object,
     photo: PropTypes.object.isRequired,
     onToggleModal: PropTypes.func.isRequired,
-    ratio: PropTypes.object,
 }
