@@ -19,7 +19,7 @@ import MaterialIcon from 'react-native-vector-icons/MaterialIcons'
 import {isIphoneX} from 'react-native-iphone-x-helper'
 import ImageCropOverlay from './ImageCropOverlay'
 
-const {width} = Dimensions.get('window')
+const {width, height} = Dimensions.get('window')
 
 YellowBox.ignoreWarnings(['componentWillReceiveProps', 'componentWillUpdate', 'componentWillMount'])
 YellowBox.ignoreWarnings([
@@ -78,6 +78,12 @@ class ExpoImageManipulator extends Component {
         sizes.ratio = ratio
         return sizes
     }
+    
+    calcSize = (size) => {
+    const resolutionIPhone7 = Math.sqrt(320 * 320 + 568 * 568);
+    const currentResolution = Math.sqrt(height * height + width * width);
+    return (currentResolution / resolutionIPhone7) * size;
+    };
 
     async onConvertImageToEditableSize() {
         const {photo: {uri: rawUri}} = this.props
@@ -489,7 +495,7 @@ class ExpoImageManipulator extends Component {
                             justifyContent: 'center',
                             alignItems: 'center',
                             alignSelf: 'center',
-                            marginTop: ratio >= 1.44 ? 213 : 0
+                            marginTop: ratio >= 1.44 ? this.calcSize(213) : 0
                         }}
                         source={{uri}}
                         resizeMode={imageRatio >= 1 ? 'contain' : 'contain'}
