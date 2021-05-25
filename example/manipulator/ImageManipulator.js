@@ -495,7 +495,7 @@ class ExpoImageManipulator extends Component {
                             justifyContent: 'center',
                             alignItems: 'center',
                             alignSelf: 'center',
-                            marginTop: ratio >= 1.44 ? this.calcSize(213) : 0
+                            marginTop: ratio >= 1.44 ? this.calcSize(155) : 0
                         }}
                         source={{uri}}
                         resizeMode={imageRatio >= 1 ? 'contain' : 'contain'}
