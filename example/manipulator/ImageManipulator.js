@@ -489,18 +489,23 @@ class ExpoImageManipulator extends Component {
                 </SafeAreaView>
                 <View style={{backgroundColor: 'black', flex: 1}}>
 
-                    <AutoHeightImage
+                       <Image
                         style={{
                             backgroundColor: 'black',
                             justifyContent: 'center',
                             alignItems: 'center',
                             alignSelf: 'center',
-                            marginTop: ratio >= 1.44 ? this.calcSize(155) : 0
+                            height: height,
+                            width: width,
+                            flex: 1,
+                            display: 'flex',
+                            flexDirection: 'column'
+                            // marginTop: ratio >= 1.44 ? this.calcSize(155) : 0
                         }}
                         source={{uri}}
                         resizeMode={imageRatio >= 1 ? 'contain' : 'contain'}
-                        width={width}
-                        height={originalHeight}
+                        // width={width}
+                        // height={originalHeight}
                         // onLayout={this.calculateMaxSizes}
                     />
                     {!!cropMode && (
